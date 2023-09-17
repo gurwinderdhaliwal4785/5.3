@@ -1,0 +1,105 @@
+# Import required libraries
+import tkinter as tk
+from tkinter import messagebox
+import RPi.GPIO as GPIO
+import time
+
+# Morse Code Dictionary
+MORSE_CODE_DICT = {
+    'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.',
+    'F': '..-.', 'G': '--.', 'H': '....', 'I': '..', 'J': '.---',
+    'K': '-.-', 'L': '.-..', 'M': '--', 'N': '-.', 'O': '---',
+    'P': '.--.', 'Q': '--.-', 'R': '.-.', 'S': '...', 'T': '-',
+    'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-', 'Y': '-.--',
+    'Z': '--..', '1': '.----', '2': '..---', '3': '...--',
+    '4': '....-', '5': '.....', '6': '-....', '7': '--...',
+    '8': '---..', '9': '----.', '0': '-----', ' ': ' '
+}
+
+# Initialize GPIO
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(18, GPIO.OUT)
+
+# Initialize variables
+blink_count = 0
+stop_blinking = False
+
+# Function to convert text to Morse code and blink LED
+def convert_and_blink():
+    global blink_count, stop_blinking
+    stop_blinking = False
+    user_input = entry.get().upper()
+
+    # Validate input length
+    if len(user_input) > 12:
+        messagebox.showwarning("Input Error", "Maximum 12 characters allowed.")
+        return
+
+    for letter in user_input:
+        # Stop blinking if the Stop button is pressed
+        if stop_blinking:
+            break
+
+        # Check for unsupported symbols
+        morse_code = MORSE_CODE_DICT.get(letter, None)
+        if morse_code is None:
+            messagebox.showwarning("Unsupported Symbol", f"The symbol {letter} is not supported.")
+            return
+
+        for symbol in morse_code:
+            if stop_blinking:
+                break
+
+            # Short blink for dot
+            if symbol == '.':
+                GPIO.output(18, True)
+                led_status.config(text="LED Status: ON")
+                time.sleep(0.2)
+                GPIO.output(18, False)
+                led_status.config(text="LED Status: OFF")
+            # Long blink for dash
+            elif symbol == '-':
+                GPIO.output(18, True)
+                led_status.config(text="LED Status: ON")
+                time.sleep(0.6)
+                GPIO.output(18, False)
+                led_status.config(text="LED Status: OFF")
+
+            time.sleep(0.2)
+            blink_count += 1
+            counter_label.config(text=f"Blinks: {blink_count}")
+
+# Function to stop LED blinking
+def stop_blink():
+    global stop_blinking
+    stop_blinking = True
+
+# Function to clear blink counter
+def clear_counter():
+    global blink_count
+    blink_count = 0
+    counter_label.config(text=f"Blinks: {blink_count}")
+
+# Initialize GUI
+root = tk.Tk()
+root.title("Morse Code Blinker")
+
+entry = tk.Entry(root, width=15)
+entry.pack()
+
+button = tk.Button(root, text="Convert and Blink", command=convert_and_blink)
+button.pack()
+
+stop_button = tk.Button(root, text="Stop", command=stop_blink)
+stop_button.pack()
+
+clear_button = tk.Button(root, text="Clear Counter", command=clear_counter)
+clear_button.pack()
+
+counter_label = tk.Label(root, text=f"Blinks: {blink_count}")
+counter_label.pack()
+
+led_status = tk.Label(root, text="LED Status: OFF")
+led_status.pack()
+
+root.mainloop()
